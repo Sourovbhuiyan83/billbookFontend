@@ -300,8 +300,8 @@ textarea.input{ resize:vertical; min-height:40px; }
 .preview-label{ margin-bottom:8px; font-weight:600; letter-spacing:.3px; }
 .preview-scale-wrap{ transform:scale(.62); transform-origin:top left; width:210mm; margin-bottom:calc(-297mm * .38); }
 .builder-preview .preview-scale-wrap{ width:210mm; }
-.preview-center{ display:flex; justify-content:center; }
-.preview-center .preview-scale-wrap{ transform:scale(.82); margin-bottom:calc(-297mm * .18); }
+.preview-center{ display:flex; justify-content:center; overflow:hidden; }
+.preview-center .preview-scale-wrap{ transform:scale(.82); transform-origin:top center; margin-bottom:calc(-297mm * .18); }
 
 /* stepper */
 .stepper{ display:flex; align-items:center; margin-bottom:18px; }
@@ -427,8 +427,8 @@ textarea.input{ resize:vertical; min-height:40px; }
   }
   .mobile-preview-overlay{ display:block; position:fixed; inset:0; background:var(--canvas); z-index:700; overflow:auto; }
   .mobile-preview-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:var(--paper); border-bottom:1px solid var(--line); position:sticky; top:0; font-weight:700; }
-  .mobile-preview-body{ padding:18px; display:flex; justify-content:center; }
-  .mobile-preview-body .preview-scale-wrap{ transform:scale(.42); margin-bottom:calc(-297mm * .58); }
+  .mobile-preview-body{ padding:18px; display:flex; justify-content:center; overflow:hidden; }
+  .mobile-preview-body .preview-scale-wrap{ transform:scale(.42); transform-origin:top center; margin-bottom:calc(-297mm * .58); }
 }
 
 @media (max-width: 900px){
@@ -449,7 +449,7 @@ textarea.input{ resize:vertical; min-height:40px; }
   }
   .mobile-link-active{ color:var(--brand); }
   .mobile-link-fab{ color:var(--brand); }
-  .preview-center .preview-scale-wrap{ transform:scale(.42); margin-bottom:calc(-297mm * .58); }
+  .preview-center .preview-scale-wrap{ transform:scale(.42); transform-origin:top center; margin-bottom:calc(-297mm * .58); }
 }
 
 @media (max-width: 560px){
@@ -548,7 +548,7 @@ function emptyBusiness(){
     bkashNumber:'', nagadNumber:'', rocketNumber:'', bankName:'', bankAccount:'', otherPayment:'',
     facebook:'', instagram:'', youtube:'', whatsapp:'', otherLink:'',
     invoicePrefix:'INV', nextInvoiceSeq:1, template:'classic',
-    currencySymbol:'৳', currencyStyle:'suffix'
+    currencySymbol:'৳', currencyStyle:'suffix', setupSkipped:false
   };
 }
 
@@ -1246,6 +1246,16 @@ function Dashboard({ business, invoices, go }){
         right={<button className="btn btn-primary" onClick={()=>go('invoice-new')}><Icon name="plus" size={16}/>Create Invoice</button>}
       />
 
+      {!business.name && (
+        <div className="panel" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', marginBottom:18 }}>
+          <div>
+            <p style={{ fontWeight:600 }}>Add your business details</p>
+            <p className="muted small">Your name, logo and payment info will show up on every invoice once added.</p>
+          </div>
+          <button className="btn btn-ghost" onClick={()=>go('settings')}>Add now</button>
+        </div>
+      )}
+
       <div className="stat-grid">
         <StatCard label="Total Invoices" value={stats.total} icon="file" tint={brand} />
         <StatCard label="This Month" value={stats.monthCount} icon="home" tint="#3A4FC7" />
@@ -1853,13 +1863,19 @@ function App(){
   }
 
   /* ---- onboarding ---- */
-  if(!business.name){
+  if(!business.name && !business.setupSkipped){
     return (
       <OnboardingShell>
         <BusinessForm
           initial={business}
           ctaLabel="Save & Continue"
           onSave={(b)=>{ setBusiness(b); toast('Business information saved.'); go('dashboard'); }}
+          secondaryAction={
+            <button type="button" className="btn btn-ghost"
+              onClick={()=>{ setBusiness(prev=>({ ...prev, setupSkipped:true })); go('dashboard'); }}>
+              Skip for now
+            </button>
+          }
         />
       </OnboardingShell>
     );
